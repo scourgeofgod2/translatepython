@@ -40,7 +40,6 @@ async def get_settings() -> SettingsResponse:
         threads=s["threads"],
         prompt_file=s["prompt_file"],
         job_timeout_minutes=s["job_timeout_minutes"],
-        hf_endpoint=s["hf_endpoint"],
         api_key_set=config.get_api_key() is not None,
         default_prompt=prompt_text,
     )
@@ -66,8 +65,6 @@ async def put_settings(body: SettingsUpdate) -> dict[str, Any]:
         s["prompt_file"] = body.prompt_file
     if body.job_timeout_minutes is not None:
         s["job_timeout_minutes"] = max(1, body.job_timeout_minutes)
-    if body.hf_endpoint is not None:
-        s["hf_endpoint"] = body.hf_endpoint.strip()
 
     config.save_settings(s)
 

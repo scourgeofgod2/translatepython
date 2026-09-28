@@ -37,7 +37,6 @@ if ($env:OPENAI_BASE_URL -notmatch '/v1/?$') {
 $env:Path = "$env:USERPROFILE\.local\bin;$env:Path"
 $env:PYTHONUTF8 = "1"
 $env:PYTHONIOENCODING = "utf-8"
-if (-not $env:HF_ENDPOINT) { $env:HF_ENDPOINT = "https://hf-mirror.com" }
 
 $OutDir = "samples\out"
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null

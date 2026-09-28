@@ -27,7 +27,6 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "threads": 4,
     "prompt_file": "prompts/tr_scientific.txt",
     "job_timeout_minutes": 180,
-    "hf_endpoint": "https://hf-mirror.com",
 }
 
 

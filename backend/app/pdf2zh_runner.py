@@ -58,14 +58,11 @@ def build_env(
     api_key = get_api_key() or ""
     base_url = normalize_base_url(str(overrides.get("base_url") or settings.get("base_url") or ""))
     model = str(overrides.get("model") or settings.get("model") or "claude-sonnet-4-6")
-    hf = str(settings.get("hf_endpoint") or "https://hf-mirror.com")
 
     env["OPENAI_BASE_URL"] = base_url
     env["OPENAI_API_KEY"] = api_key
     env["OPENAI_MODEL"] = model
     env["OPENAI_MAX_TOKENS"] = "4096"
-    if hf:
-        env["HF_ENDPOINT"] = hf
 
     return env
 
@@ -105,8 +102,8 @@ _ERROR_PATTERNS: list[tuple[re.Pattern[str], str]] = [
         "SSL sertifika hatası — sistem güven deposu devreye alınmalı",
     ),
     (
-        re.compile(r"huggingface|HF_ENDPOINT|onnx.*None|from_pretrained|model.*download|assets\.py", re.I),
-        "Model/font indirilemedi — ağ veya SSL hatası",
+        re.compile(r"model.*download|assets\.py|onnx.*None|from_pretrained", re.I),
+        "Model/font indirilemedi — ağ hatası",
     ),
 ]
 

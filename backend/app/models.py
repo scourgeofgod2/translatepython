@@ -40,7 +40,6 @@ class SettingsResponse(BaseModel):
     threads: int
     prompt_file: str
     job_timeout_minutes: int
-    hf_endpoint: str
     api_key_set: bool
     default_prompt: str | None = None
 
@@ -54,7 +53,6 @@ class SettingsUpdate(BaseModel):
     threads: int | None = None
     prompt_file: str | None = None
     job_timeout_minutes: int | None = None
-    hf_endpoint: str | None = None
     api_key: str | None = None
 
 

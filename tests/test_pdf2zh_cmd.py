@@ -5,14 +5,14 @@ from backend.app.pdf2zh_runner import build_command, build_env, classify_error, 
 
 
 def test_build_env_normalizes_base_url():
-    env = build_env({"base_url": "https://app.claude.gg", "model": "claude-sonnet-4-6", "hf_endpoint": ""})
+    env = build_env({"base_url": "https://app.claude.gg", "model": "claude-sonnet-4-6"})
     assert env["OPENAI_BASE_URL"] == "https://app.claude.gg/v1"
     assert env["OPENAI_MODEL"] == "claude-sonnet-4-6"
     assert env["PYTHONUTF8"] == "1"
 
 
 def test_build_env_keeps_v1():
-    env = build_env({"base_url": "https://app.claude.gg/v1", "model": "m", "hf_endpoint": ""})
+    env = build_env({"base_url": "https://app.claude.gg/v1", "model": "m"})
     assert env["OPENAI_BASE_URL"] == "https://app.claude.gg/v1"
 
 

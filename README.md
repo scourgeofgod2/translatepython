@@ -29,16 +29,9 @@ copy .env.example data\.env
 > Kurumsal ağda TLS sertifikası sorunu varsa `--system-certs` ve
 > `backend/app/ssl_boot` otomatik olarak sistem güven deposunu kullanır.
 
-### Model / font ön indirme (HuggingFace engelliyse)
+### Model / font indirme
 
-pdf2zh, DocLayout-YOLO ONNX modeli (~75 MB) ve Noto/GoNoto fontlarını indirir.
-HuggingFace kapalıysa **ModelScope** ve **GitHub** aynaları kullanılır:
-
-```powershell
-.\scripts\bootstrap_assets.ps1
-```
-
-Varlıklar `~/.cache/babeldoc/` altına koyulur.
+pdf2zh ilk çalıştırmada gerekli model ve fontları otomatik indirir.
 
 ## Çalıştırma
 
@@ -69,7 +62,7 @@ uv run --system-certs python -m pytest tests/ -q
 backend/app/          FastAPI (jobs, settings, pdf2zh_runner)
 frontend/             Vanilla JS UI (Çeviri / İşler / Ayarlar)
 prompts/              EN→TR bilimsel çeviri promptu
-scripts/              setup / run / smoke / bootstrap_assets
+scripts/              setup / run / smoke
 data/                 .env + job artifacts (gitignored)
 ```
 

@@ -1,4 +1,6 @@
 /* mirapdf — modern clean UI */
+[x-cloak] { display: none !important; }
+
 :root {
   --bg: #0f1419;
   --bg-card: #1a2028;
@@ -71,8 +73,7 @@ body {
 }
 
 /* Tabs */
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
+.tab-panel { display: block; }
 
 /* Cards */
 .card {

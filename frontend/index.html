@@ -2,25 +2,29 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>mirapdf — PDF Çeviri</title>
   <link rel="stylesheet" href="/static/css/app.css" />
+  <script src="/static/js/app.js" defer></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
-<body>
+<body x-data="app()">
+
   <header class="app-header">
     <div class="logo">mira<span>pdf</span></div>
     <nav class="nav">
-      <button class="nav-btn active" data-tab="translate">Çeviri</button>
-      <button class="nav-btn" data-tab="jobs">İşler</button>
-      <button class="nav-btn" data-tab="settings">Ayarlar</button>
+      <button class="nav-btn" :class="{ active: tab === 'translate' }" @click="tab = 'translate'">Çeviri</button>
+      <button class="nav-btn" :class="{ active: tab === 'jobs' }" @click="tab = 'jobs'; refreshJobs()">İşler</button>
+      <button class="nav-btn" :class="{ active: tab === 'settings' }" @click="tab = 'settings'; loadSettings()">Ayarlar</button>
     </nav>
   </header>
 
   <main class="container">
+
     <!-- ========== ÇEVİRİ ========== -->
-    <section id="tab-translate" class="tab-panel active">
-      <div class="banner banner-err" id="translate-error"></div>
-      <div class="banner banner-info" id="translate-info"></div>
+    <section x-show="tab === 'translate'" class="tab-panel">
+      <div class="banner banner-err" x-show="translateError" x-text="translateError"></div>
+      <div class="banner banner-info" x-show="translateInfo" x-text="translateInfo"></div>
 
       <div class="card">
         <h2>PDF Çevir — EN → TR</h2>
@@ -28,12 +32,18 @@
           Karmaşık düzenli (formül, tablo, çok sütun) PDF yükleyin. Düzen korunur.
         </p>
 
-        <div class="dropzone" id="dropzone">
+        <div class="dropzone"
+             :class="{ dragover: isDragging }"
+             @click="$refs.fileInput.click()"
+             @dragover.prevent="isDragging = true"
+             @dragleave.prevent="isDragging = false"
+             @drop.prevent="isDragging = false; setFile($event.dataTransfer.files[0])">
           <div class="icon">📄</div>
           <div>PDF dosyasını buraya sürükleyin veya tıklayın</div>
           <div class="hint">Maksimum 80 MB · sadece .pdf</div>
-          <div class="filename" id="file-label"></div>
-          <input type="file" id="file-input" accept=".pdf,application/pdf" hidden />
+          <div class="filename" x-text="fileLabel"></div>
+          <input type="file" x-ref="fileInput" accept=".pdf,application/pdf" hidden
+                 @change="setFile($event.target.files[0])" />
         </div>
 
         <details class="advanced">
@@ -42,8 +52,8 @@
             <div class="row">
               <div class="field">
                 <label for="opt-lang-in">Kaynak dil</label>
-                <select id="opt-lang-in">
-                  <option value="en" selected>İngilizce (en)</option>
+                <select id="opt-lang-in" x-model="langIn">
+                  <option value="en">İngilizce (en)</option>
                   <option value="de">Almanca (de)</option>
                   <option value="fr">Fransızca (fr)</option>
                   <option value="es">İspanyolca (es)</option>
@@ -51,8 +61,8 @@
               </div>
               <div class="field">
                 <label for="opt-lang-out">Hedef dil</label>
-                <select id="opt-lang-out">
-                  <option value="tr" selected>Türkçe (tr)</option>
+                <select id="opt-lang-out" x-model="langOut">
+                  <option value="tr">Türkçe (tr)</option>
                   <option value="en">İngilizce (en)</option>
                 </select>
               </div>
@@ -60,102 +70,130 @@
             <div class="row-3">
               <div class="field">
                 <label for="opt-pages">Sayfa aralığı</label>
-                <input id="opt-pages" placeholder="örn. 1-3,5 (boş = tümü)" />
+                <input id="opt-pages" x-model="pages" placeholder="örn. 1-3,5 (boş = tümü)" />
               </div>
               <div class="field">
                 <label for="opt-threads">Eşzamanlılık</label>
-                <input id="opt-threads" type="number" min="1" max="8" value="4" />
+                <input id="opt-threads" type="number" min="1" max="8" x-model.number="threads" />
               </div>
               <div class="field">
                 <label for="opt-model">Model</label>
-                <select id="opt-model">
-                  <option value="claude-sonnet-4-6" selected>claude-sonnet-4-6</option>
+                <select id="opt-model" x-model="model">
+                  <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
                   <option value="claude-sonnet-4-6-thinking">claude-sonnet-4-6-thinking</option>
                 </select>
               </div>
             </div>
             <div class="field">
               <label for="opt-prompt">Özel prompt</label>
-              <textarea id="opt-prompt" placeholder="Varsayılan bilimsel prompt kullanılır"></textarea>
+              <textarea id="opt-prompt" x-model="promptOverride" placeholder="Varsayılan bilimsel prompt kullanılır"></textarea>
               <div class="hint">Boş bırakırsanız varsayılan TR bilimsel prompt uygulanır.</div>
             </div>
             <div class="checkbox-field">
-              <input type="checkbox" id="opt-ignore-cache" />
+              <input type="checkbox" id="opt-ignore-cache" x-model="ignoreCache" />
               <label for="opt-ignore-cache">Önbelleği yok say (yeniden çevir)</label>
             </div>
           </div>
         </details>
 
         <div class="btn-row">
-          <button class="btn btn-primary" id="btn-start" disabled>Çeviriyi Başlat</button>
-          <button class="btn btn-secondary" id="btn-settings-shortcut">Ayarlar</button>
+          <button class="btn btn-primary" id="btn-start" :disabled="!selectedFile || uploading" @click="submitJob">
+            <span x-text="uploading ? 'Yükleniyor…' : 'Çeviriyi Başlat'"></span>
+          </button>
+          <button class="btn btn-secondary" @click="tab = 'settings'; loadSettings()">Ayarlar</button>
         </div>
       </div>
     </section>
 
     <!-- ========== İŞLER ========== -->
-    <section id="tab-jobs" class="tab-panel">
+    <section x-show="tab === 'jobs'" class="tab-panel">
       <div class="card">
         <h2>İşler</h2>
         <div id="jobs-list">
-          <div class="empty">Henüz iş yok. Çeviri sekmesinden bir PDF yükleyin.</div>
+          <template x-if="jobs.length === 0">
+            <div class="empty">Henüz iş yok. Çeviri sekmesinden bir PDF yükleyin.</div>
+          </template>
+          <template x-for="job in jobs" :key="job.id">
+            <div class="job-card">
+              <div class="header">
+                <div class="filename" x-text="job.filename" :title="job.filename"></div>
+                <span class="badge" :class="'badge-' + job.status" x-text="statusLabel(job.status)"></span>
+              </div>
+              <div class="meta">
+                <span x-text="stageLabel(job.stage)"></span>
+                <span x-show="job.pages_total != null" x-text="`${job.pages_done ?? 0}/${job.pages_total} sayfa`"></span>
+                <span x-text="formatDate(job.created_at)"></span>
+              </div>
+              <div x-show="job.error" style="color:var(--err);font-size:0.88rem;margin-bottom:0.5rem" x-text="job.error"></div>
+              <div class="progress-track">
+                <div class="progress-bar" :style="{ width: (job.status === 'done' ? 100 : Math.round((job.progress || 0) * 100)) + '%' }"></div>
+              </div>
+              <div class="job-actions">
+                <a x-show="job.status === 'done' && job.output_mono" class="btn btn-primary btn-sm"
+                   :href="`/api/jobs/${job.id}/download`">İndir (PDF)</a>
+                <button x-show="job.status === 'running' || job.status === 'queued'"
+                        class="btn btn-danger btn-sm" @click="deleteJob(job.id)">İptal / Sil</button>
+                <button x-show="job.status !== 'running' && job.status !== 'queued'"
+                        class="btn btn-secondary btn-sm" @click="toggleLog(job.id)">Günlük</button>
+                <button x-show="job.status !== 'running' && job.status !== 'queued'"
+                        class="btn btn-danger btn-sm" @click="deleteJob(job.id)">Sil</button>
+              </div>
+              <div class="log-box" x-show="logs[job.id]" x-text="logs[job.id] || ''"></div>
+            </div>
+          </template>
         </div>
       </div>
     </section>
 
     <!-- ========== AYARLAR ========== -->
-    <section id="tab-settings" class="tab-panel">
-      <div class="banner banner-ok" id="settings-ok"></div>
-      <div class="banner banner-err" id="settings-err"></div>
+    <section x-show="tab === 'settings'" class="tab-panel">
+      <div class="banner banner-ok" x-show="settingsOk" x-text="settingsOk"></div>
+      <div class="banner banner-err" x-show="settingsErr" x-text="settingsErr"></div>
 
       <div class="card">
         <h2>API Ayarları</h2>
         <div class="field">
           <label for="set-base-url">Base URL</label>
-          <input id="set-base-url" placeholder="https://app.claude.gg/v1" />
+          <input id="set-base-url" x-model="baseUrl" @input="updatePreview" placeholder="https://app.claude.gg/v1" />
           <div class="help-inline">
             OpenAI-uyumlu uç nokta. <code>/v1</code> ile bitmelidir — otomatik eklenir.
-            Şuan: <strong id="base-url-preview">—</strong>
+            Şu an: <strong x-text="normalizedBaseUrl">—</strong>
           </div>
         </div>
         <div class="field">
           <label for="set-api-key">API anahtarı</label>
-          <input id="set-api-key" type="password" placeholder="sk-..." autocomplete="off" />
-          <div class="help-inline" id="api-key-status">Kayıtlı anahtar yok</div>
+          <input id="set-api-key" type="password" x-model="apiKey" placeholder="sk-..." autocomplete="off" />
+          <div class="help-inline" x-text="apiKeyStatus">Kayıtlı anahtar yok</div>
         </div>
         <div class="row">
           <div class="field">
             <label for="set-model">Model</label>
-            <select id="set-model">
+            <select id="set-model" x-model="settingsModel">
               <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
               <option value="claude-sonnet-4-6-thinking">claude-sonnet-4-6-thinking</option>
             </select>
           </div>
           <div class="field">
             <label for="set-threads">Varsayılan eşzamanlılık</label>
-            <input id="set-threads" type="number" min="1" max="8" value="4" />
+            <input id="set-threads" type="number" min="1" max="8" x-model.number="settingsThreads" />
           </div>
         </div>
         <div class="row">
           <div class="field">
             <label for="set-lang-in">Varsayılan kaynak dil</label>
-            <input id="set-lang-in" value="en" />
+            <input id="set-lang-in" x-model="settingsLangIn" />
           </div>
           <div class="field">
             <label for="set-lang-out">Varsayılan hedef dil</label>
-            <input id="set-lang-out" value="tr" />
+            <input id="set-lang-out" x-model="settingsLangOut" />
           </div>
-        </div>
-        <div class="field">
-          <label for="set-hf">HF_ENDPOINT (model indirme aynası)</label>
-          <input id="set-hf" placeholder="https://hf-mirror.com" />
         </div>
 
         <div class="btn-row">
-          <button class="btn btn-secondary" id="btn-test">Bağlantıyı Test Et</button>
-          <button class="btn btn-primary" id="btn-save">Kaydet</button>
+          <button class="btn btn-secondary" id="btn-test" @click="testConnection">Bağlantıyı Test Et</button>
+          <button class="btn btn-primary" id="btn-save" @click="saveSettings">Kaydet</button>
         </div>
-        <div id="test-result" class="help-inline" style="margin-top:0.75rem"></div>
+        <div id="test-result" class="help-inline" style="margin-top:0.75rem" x-text="testResult"></div>
       </div>
 
       <div class="card">
@@ -169,6 +207,5 @@
     </section>
   </main>
 
-  <script type="module" src="/static/js/app.js"></script>
 </body>
 </html>
