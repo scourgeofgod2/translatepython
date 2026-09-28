@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>mirapdf — PDF Çeviri</title>
+  <link rel="stylesheet" href="/static/css/app.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="logo">mira<span>pdf</span></div>
+    <nav class="nav">
+      <button class="nav-btn active" data-tab="translate">Çeviri</button>
+      <button class="nav-btn" data-tab="jobs">İşler</button>
+      <button class="nav-btn" data-tab="settings">Ayarlar</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- ========== ÇEVİRİ ========== -->
+    <section id="tab-translate" class="tab-panel active">
+      <div class="banner banner-err" id="translate-error"></div>
+      <div class="banner banner-info" id="translate-info"></div>
+
+      <div class="card">
+        <h2>PDF Çevir — EN → TR</h2>
+        <p style="color:var(--text-dim);margin-bottom:1rem;font-size:0.92rem">
+          Karmaşık düzenli (formül, tablo, çok sütun) PDF yükleyin. Düzen korunur.
+        </p>
+
+        <div class="dropzone" id="dropzone">
+          <div class="icon">📄</div>
+          <div>PDF dosyasını buraya sürükleyin veya tıklayın</div>
+          <div class="hint">Maksimum 80 MB · sadece .pdf</div>
+          <div class="filename" id="file-label"></div>
+          <input type="file" id="file-input" accept=".pdf,application/pdf" hidden />
+        </div>
+
+        <details class="advanced">
+          <summary>Gelişmiş seçenekler</summary>
+          <div class="body">
+            <div class="row">
+              <div class="field">
+                <label for="opt-lang-in">Kaynak dil</label>
+                <select id="opt-lang-in">
+                  <option value="en" selected>İngilizce (en)</option>
+                  <option value="de">Almanca (de)</option>
+                  <option value="fr">Fransızca (fr)</option>
+                  <option value="es">İspanyolca (es)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="opt-lang-out">Hedef dil</label>
+                <select id="opt-lang-out">
+                  <option value="tr" selected>Türkçe (tr)</option>
+                  <option value="en">İngilizce (en)</option>
+                </select>
+              </div>
+            </div>
+            <div class="row-3">
+              <div class="field">
+                <label for="opt-pages">Sayfa aralığı</label>
+                <input id="opt-pages" placeholder="örn. 1-3,5 (boş = tümü)" />
+              </div>
+              <div class="field">
+                <label for="opt-threads">Eşzamanlılık</label>
+                <input id="opt-threads" type="number" min="1" max="8" value="4" />
+              </div>
+              <div class="field">
+                <label for="opt-model">Model</label>
+                <select id="opt-model">
+                  <option value="claude-sonnet-4-6" selected>claude-sonnet-4-6</option>
+                  <option value="claude-sonnet-4-6-thinking">claude-sonnet-4-6-thinking</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="opt-prompt">Özel prompt</label>
+              <textarea id="opt-prompt" placeholder="Varsayılan bilimsel prompt kullanılır"></textarea>
+              <div class="hint">Boş bırakırsanız varsayılan TR bilimsel prompt uygulanır.</div>
+            </div>
+            <div class="checkbox-field">
+              <input type="checkbox" id="opt-ignore-cache" />
+              <label for="opt-ignore-cache">Önbelleği yok say (yeniden çevir)</label>
+            </div>
+          </div>
+        </details>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-start" disabled>Çeviriyi Başlat</button>
+          <button class="btn btn-secondary" id="btn-settings-shortcut">Ayarlar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== İŞLER ========== -->
+    <section id="tab-jobs" class="tab-panel">
+      <div class="card">
+        <h2>İşler</h2>
+        <div id="jobs-list">
+          <div class="empty">Henüz iş yok. Çeviri sekmesinden bir PDF yükleyin.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== AYARLAR ========== -->
+    <section id="tab-settings" class="tab-panel">
+      <div class="banner banner-ok" id="settings-ok"></div>
+      <div class="banner banner-err" id="settings-err"></div>
+
+      <div class="card">
+        <h2>API Ayarları</h2>
+        <div class="field">
+          <label for="set-base-url">Base URL</label>
+          <input id="set-base-url" placeholder="https://app.claude.gg/v1" />
+          <div class="help-inline">
+            OpenAI-uyumlu uç nokta. <code>/v1</code> ile bitmelidir — otomatik eklenir.
+            Şuan: <strong id="base-url-preview">—</strong>
+          </div>
+        </div>
+        <div class="field">
+          <label for="set-api-key">API anahtarı</label>
+          <input id="set-api-key" type="password" placeholder="sk-..." autocomplete="off" />
+          <div class="help-inline" id="api-key-status">Kayıtlı anahtar yok</div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="set-model">Model</label>
+            <select id="set-model">
+              <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+              <option value="claude-sonnet-4-6-thinking">claude-sonnet-4-6-thinking</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="set-threads">Varsayılan eşzamanlılık</label>
+            <input id="set-threads" type="number" min="1" max="8" value="4" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="set-lang-in">Varsayılan kaynak dil</label>
+            <input id="set-lang-in" value="en" />
+          </div>
+          <div class="field">
+            <label for="set-lang-out">Varsayılan hedef dil</label>
+            <input id="set-lang-out" value="tr" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="set-hf">HF_ENDPOINT (model indirme aynası)</label>
+          <input id="set-hf" placeholder="https://hf-mirror.com" />
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="btn-test">Bağlantıyı Test Et</button>
+          <button class="btn btn-primary" id="btn-save">Kaydet</button>
+        </div>
+        <div id="test-result" class="help-inline" style="margin-top:0.75rem"></div>
+      </div>
+
+      <div class="card">
+        <h2>Motor Hakkında</h2>
+        <p style="color:var(--text-dim);font-size:0.92rem">
+          Çeviri motoru: <strong>pdf2zh</strong> (PDFMathTranslate).
+          Formül, tablo ve çok sütun düzenlerini koruyarak bilimsel PDF çevirisi yapar.
+          Kaynak: <a href="https://github.com/Byaidu/PDFMathTranslate" target="_blank" style="color:var(--accent)">GitHub</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>
